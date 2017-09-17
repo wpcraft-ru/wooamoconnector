@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: WooAmoConnector
-Version: 0.3
+Version: 0.4
 Plugin URI: https://wpcraft.ru/product/wooamoconnector/
 Description: AmoCRM & WooCommerce - интеграция. Создание сделок и контактов с сайта в CRM
 Author: WPCraft
@@ -80,7 +80,7 @@ class WooAmoConnector {
 		add_filter( 'cron_schedules', array($this, 'add_schedule') );
 		add_action('init', [$this, 'init_cron']);
 
-		// add_action('wooamoconnector_cron_worker', [$this, 'send_walker']);
+		add_action('wooamoconnector_cron_worker', [$this, 'send_walker']);
 
 		add_action( 'woocommerce_order_status_changed', array( $this, 'hook_on_order_status_change' ), 10, 3 );
 
