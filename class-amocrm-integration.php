@@ -21,7 +21,7 @@ Author URI: http://wpcraft.ru/?utm_source=wpplugin&utm_medium=plugin-link&utm_ca
  * @license   http://www.opensource.org/licenses/BSD-3-Clause  The BSD 3-Clause License
  * @link      https://github.com/sprightly/woocommerce-amocrm
  */
-class AmoCRM_Integration {
+class WooAmoConnector {
 
 	private $login = 'm@wpcraft.ru';
 	private $key = '6eb9445b11679523b09c1d67b7f15ca7';
@@ -66,12 +66,111 @@ class AmoCRM_Integration {
 	}
 
 	function __construct() {
-		$this->attach_hooks();
+		// add_action( 'woocommerce_add_to_cart', array( $this, 'hook_on_add_product' ), 10, 6 );
+
+		add_filter( 'cron_schedules', array($this, 'add_schedule') );
+		add_action('init', [$this, 'init_cron']);
+
+		add_action('wooamoconnector_cron_worker', [$this, 'send_walker']);
+
+		add_action( 'woocommerce_order_status_changed', array( $this, 'hook_on_order_status_change' ), 10, 3 );
+
+		add_action('admin_menu', [$this, 'add_menu_tools']);
+		add_action('wac_sync', [$this, 'send_walker']);
 	}
 
-	private function attach_hooks() {
-		add_action( 'woocommerce_add_to_cart', array( $this, 'hook_on_add_product' ), 10, 6 );
-		add_action( 'woocommerce_order_status_changed', array( $this, 'hook_on_order_status_change' ), 10, 3 );
+
+	function send_order($order_id){
+		$order = wc_get_order($order_id);
+
+		$full_name = 'test';
+		$phone = 'test';
+		$email = 'test@test.test';
+		$product_id = 15551;
+		$check1 = $this->add_contact( $full_name, $phone, $email );
+		$check2 = $this->add_lead( $full_name, $product_id );
+
+		var_dump($check1);
+		var_dump($check2);
+		exit;
+
+		return false;
+	}
+
+
+
+
+
+
+	function add_menu_tools(){
+		add_submenu_page(
+			'tools.php',
+			'AmoCRM - инструменты',
+			'AmoCRM',
+			'manage_options',
+			'wooamoconnector-tools',
+			[$this, 'dysplay_tools']
+		);
+
+	}
+
+	function dysplay_tools(){
+		$url1 = admin_url('tools.php?page=wooamoconnector-tools');
+		$url2 = add_query_arg('a', 'wac-sync', $url1);
+		?>
+		<div class="wooamoconnector-tools-wrapper">
+			<h1>AmoCRM</h1>
+			<?php
+				if(empty($_GET['a'])){
+					echo '<p>Ручная отправка заказов в AmoCRM</p>';
+					printf('<a href="%s" class="btn button">Выполнить</a>', $url2);
+				} else {
+					echo '<hr>';
+					printf('<a href="%s" class="btn button">Вернуться</a>', $url1);
+					echo '<hr>';
+					do_action('wac_sync');
+				}
+			?>
+
+			<?php  ?>
+		</div>
+		<?php
+	}
+
+
+
+	function send_walker(){
+		$args = array(
+      'post_type' => 'shop_order',
+      'post_status' => 'any',
+      'meta_key' => 'wooamoc_send_timestamp',
+      'meta_compare' => 'NOT EXISTS',
+    );
+    $orders = get_posts($args);
+
+		$result_list = [];
+		foreach ($orders as $key => $order) {
+			$check = $this->send_order($order->ID);
+
+      if($check){
+        update_post_meta($order->ID, 'wooamoc_send_timestamp', date("Y-m-d H:i:s"));
+				$result_list[] = $order->ID;
+      }
+		}
+
+		var_dump($result_list);
+
+	}
+
+	function add_schedule( $schedules ) {
+    $schedules['wooamoconnector_cron'] = array( 'interval' => 60, 'display' => 'WooAmoConnector Cron Worker' );
+    return $schedules;
+  }
+
+	function init_cron(){
+		if ( ! wp_next_scheduled( 'wooamoconnector_cron_worker' ) ) {
+      wp_schedule_event( time(), 'wooamoconnector_cron', 'wooamoconnector_cron_worker' );
+    }
 	}
 
 	function hook_on_add_product( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
@@ -141,7 +240,7 @@ class AmoCRM_Integration {
 			)
 		);
 
-		$this->api->setContacts( $contacts );
+		return $this->api->setContacts( $contacts );
 	}
 
 	/**
@@ -152,16 +251,10 @@ class AmoCRM_Integration {
 	 * @param $full_name
 	 * @param $product_id
 	 */
-	private function add_lead( $full_name, $product_id ) {
+	private function add_lead( $full_name, $order_id ) {
 		$this->maybe_api_init();
 
-		if ( ! is_user_logged_in() ) {
-			return false;
-		}
-
-		$product            = wc_get_product( $product_id );
-		$product_title      = $product->get_title();
-		$lead_title         = $product_title . ' от ' . $full_name;
+		$lead_title         = 'Заказ №' . $order_id . ' от ' . $full_name;
 		$new_lead_status_id = $this->api->getLeadStatusID( $this->leads_statuses_titles['new'] );
 
 		$request['add'][] = array(
@@ -171,11 +264,13 @@ class AmoCRM_Integration {
 
 		$added_leads = $this->api->setLeads( $request );
 
+		return $added_leads;
+
 		if ( $added_leads && is_array( $added_leads ) ) {
 			foreach ( $added_leads as $lead_info ) {
 				$user         = wp_get_current_user();
 				$lead_details = array(
-					'product_id'         => $product_id,
+					'order_id'         => $order_id,
 					'lead_id'            => $lead_info['id'],
 					'lead_last_modified' => $lead_info['last_modified'],
 				);
@@ -228,7 +323,7 @@ class AmoCRM_Integration {
 }
 
 try {
-	new AmoCRM_Integration();
+	new WooAmoConnector();
 } catch ( \Exception $exception ) {
 	error_log( "Caught " . $exception );
 }
