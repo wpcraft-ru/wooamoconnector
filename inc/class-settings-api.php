@@ -71,8 +71,33 @@ class WooAmoConnector_Settings {
     	'wac-settings'
     );
 
+    register_setting('wac-settings', 'wac_sync_disable');
+    add_settings_field(
+      $id = 'wac_sync_disable',
+      $title = 'Отключить синхронизацию по расписанию',
+      $callback = [$this, 'display_wac_sync_disable'],
+      $page = 'wac-settings',
+      $section = 'woomss_section_cron'
+    );
+    register_setting('wac-settings', 'wac_sync_time');
+    add_settings_field(
+      $id = 'wac_sync_time',
+      $title = 'Таймер синхронизации в секундах',
+      $callback = [$this, 'display_wac_sync_time'],
+      $page = 'wac-settings',
+      $section = 'woomss_section_cron'
+    );
   }
 
+  function display_wac_sync_time(){
+    $name ='wac_sync_time';
+    printf('<input type="number" name="%s" value="%s"/>', $name, get_option($name, 60));
+  }
+
+  function display_wac_sync_disable(){
+    $name ='wac_sync_disable';
+    printf('<input type="checkbox" name="%s" value="1"/>', $name, checked(1, get_option($name)));
+  }
   function display_wac_key(){
     $name ='wac_key';
     printf('<input type="password" name="%s" value="%s"/>', $name, get_option($name));

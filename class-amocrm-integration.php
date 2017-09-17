@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: WooAmoConnector
-Version: 0.4
-Plugin URI: https://wpcraft.ru/product/wooamoconnector/
+Version: 0.5
+Plugin URI: https://github.com/uptimizt/wooamoconnector
 Description: AmoCRM & WooCommerce - интеграция. Создание сделок и контактов с сайта в CRM
 Author: WPCraft
 Author URI: http://wpcraft.ru/?utm_source=wpplugin&utm_medium=plugin-link&utm_campaign=WooAmoConnector
@@ -181,6 +181,9 @@ class WooAmoConnector {
 			<?php
 				if(empty($_GET['a'])){
 					echo '<p>Ручная отправка заказов в AmoCRM</p>';
+
+					$time_stamp = get_transient('wac_last_start');
+					printf('<p>Отметка о последней синхронизации: %s</p>', empty($time_stamp) ? 'отсутствует' : $time_stamp);
 					printf('<a href="%s" class="btn button">Выполнить</a>', $url2);
 				} else {
 					echo '<hr>';
@@ -196,6 +199,9 @@ class WooAmoConnector {
 
 
 	function send_walker(){
+
+		set_transient('wac_last_start', date('Y-m-d H:i:s'), DAY_IN_SECONDS);
+
 		$args = array(
       'post_type' => 'shop_order',
       'post_status' => 'any',
@@ -219,7 +225,8 @@ class WooAmoConnector {
 	}
 
 	function add_schedule( $schedules ) {
-    $schedules['wooamoconnector_cron'] = array( 'interval' => 60, 'display' => 'WooAmoConnector Cron Worker' );
+		$time = get_option('wac_sync_time', 60);
+    $schedules['wooamoconnector_cron'] = array( 'interval' => $time, 'display' => 'WooAmoConnector Cron Worker' );
     return $schedules;
   }
 
