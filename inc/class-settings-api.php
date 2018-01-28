@@ -30,10 +30,10 @@ class WooAmoConnector_Settings {
 
   function settings_init(){
     add_settings_section(
-    	'wac_section_login',
-    	'Доступ',
-    	null,
-    	'wac-settings'
+      'wac_section_login',
+      'Доступ',
+      null,
+      'wac-settings'
     );
 
     register_setting('wac-settings', 'wac_login');
@@ -48,7 +48,7 @@ class WooAmoConnector_Settings {
     register_setting('wac-settings', 'wac_key');
     add_settings_field(
       $id = 'wac_key',
-      $title = 'Ключ доступа',
+      $title = 'Ключ доступа API',
       $callback = [$this, 'display_wac_key'],
       $page = 'wac-settings',
       $section = 'wac_section_login'
@@ -65,10 +65,10 @@ class WooAmoConnector_Settings {
 
 
     add_settings_section(
-    	'woomss_section_cron',
-    	'Расписание синхронизации',
-    	null,
-    	'wac-settings'
+      'woomss_section_cron',
+      'Расписание синхронизации',
+      null,
+      'wac-settings'
     );
 
     register_setting('wac-settings', 'wac_sync_disable');
@@ -101,6 +101,9 @@ class WooAmoConnector_Settings {
   function display_wac_key(){
     $name ='wac_key';
     printf('<input type="password" name="%s" value="%s"/>', $name, get_option($name));
+    ?>
+    <p><small>Получить ключ доступа можно на странице настроек API AmoCRM</small></p>
+    <?php
   }
 
   function display_wac_login(){

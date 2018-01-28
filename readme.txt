@@ -36,5 +36,9 @@ e.g.
 == Changelog ==
 
 
-= 1.0 =
+= 0.5 =
+* Code refactoring
+* Small fixes
+
+= 0.5 =
 * init commit
