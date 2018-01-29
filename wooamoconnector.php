@@ -9,6 +9,76 @@ Author URI: http://wpcraft.ru/?utm_source=wpplugin&utm_medium=plugin-link&utm_ca
 */
 
 
+
+function wooac_test(){
+  $data = wooac_request('/api/v2/leads?limit_rows=33');
+
+  echo '<pre>';
+  var_dump($data);
+  echo '</pre>';
+}
+
+/**
+* Request wrapper for API AmoCRM
+*/
+function wooac_request($ep = '', $method = 'GET', $data = array())
+{
+  try {
+
+    $cookies = get_transient('wooac_cookies');
+
+    if(empty($cookies) and $ep != '/private/api/auth.php'){
+      wooac_request('/private/api/auth.php', 'POST');
+      $cookies = get_transient('wooac_cookies');
+    }
+
+    $url = 'https://' . get_option('wac_subdomain') . '.amocrm.ru' . $ep;
+
+    $url = add_query_arg('type', 'json', $url);
+
+    $login_data = array(
+      'USER_LOGIN' => get_option('wac_login'),
+      'USER_HASH' => get_option('wac_key')
+    );
+
+    $args = array(
+      'method' => $method,
+      'timeout' => '30',
+    );
+
+
+    if( empty($cookies)){
+      $args['body'] = $login_data;
+    } else {
+      $args['body'] = $login_data;
+      $args['cookies'] = $cookies;
+    }
+
+    do_action('logger_u7', $args);
+
+    $response = wp_remote_request( $url, $args );
+
+    if(wp_remote_retrieve_response_code($response) != 200){
+      throw new Exception('Ошибка ответа от сервера. Код: ' . wp_remote_retrieve_response_code($response));
+    }
+
+    if(isset($response["cookies"]) and $ep == '/private/api/auth.php'){
+      set_transient('wooac_cookies', $response["cookies"], MINUTE_IN_SECONDS * 14);
+      // do_action('logger_u7', ['set_transient-wooac_cookies'], $response["cookies"]);
+      return true;
+    }
+
+    $data = wp_remote_retrieve_body($response);
+    $data = json_decode($data, true);
+
+    return $data;
+
+  } catch (Exception $e) {
+    return new WP_Error( 'api_request_error', $e->getMessage() );
+  }
+
+}
+
 require_once 'inc/class-settings-api.php';
 
 class WooAC {
@@ -38,24 +108,6 @@ class WooAC {
     'email' => 'EMAIL',
   );
 
-  /**
-   * Class instance.
-   */
-  protected static $_instance = null;
-
-  /**
-   * Get class instance
-   */
-  final public static function instance() {
-    $class = get_called_class();
-
-    if ( is_null( self::$_instance ) ) {
-      self::$_instance = new $class();
-    }
-
-    return self::$_instance;
-  }
-
   function __construct() {
     add_action( 'woocommerce_add_to_cart', array( $this, 'hook_on_add_product' ), 10, 6 );
 
@@ -70,8 +122,18 @@ class WooAC {
 
     add_action( 'woocommerce_order_status_changed', array( $this, 'hook_on_order_status_change' ), 10, 3 );
 
-    add_action('admin_menu', [$this, 'setup_menu']);
+    add_action('admin_menu', [$this, 'add_admin_menu']);
     add_action('wac_sync', [$this, 'send_walker_manual_start']);
+
+    add_filter( "plugin_action_links_" . plugin_basename( __FILE__ ), array($this, 'plugin_add_settings_link') );
+
+  }
+
+
+  function plugin_add_settings_link( $links ) {
+      $settings_link = '<a href="options-general.php?page=wac-settings">Настройки</a>';
+      array_push( $links, $settings_link );
+      return $links;
   }
 
   /**
@@ -144,8 +206,7 @@ class WooAC {
     return $full_name;
   }
 
-
-  function setup_menu(){
+  function add_admin_menu(){
     add_submenu_page(
       'tools.php',
       'AmoCRM - инструменты',
@@ -154,9 +215,7 @@ class WooAC {
       'wooamoconnector-tools',
       [$this, 'display_tools']
     );
-
   }
-
 
   function display_tools(){
     $url1 = admin_url('tools.php?page=wooamoconnector-tools');
@@ -180,6 +239,9 @@ class WooAC {
       ?>
     </div>
     <?php
+
+    wooac_test();
+
   }
 
 
@@ -194,6 +256,17 @@ class WooAC {
       'meta_key' => 'wooamoc_send_timestamp',
       'meta_compare' => 'NOT EXISTS',
     );
+
+    if(empty(get_option('wooac_orders_send_from'))){
+      $date_from = '2 day ago';
+    } else {
+      $date_from = get_option('wooms_orders_send_from');
+    }
+
+    $args['date_query'] = array(
+      'after' => $date_from
+    );
+
     $orders = get_posts($args);
 
     $result_list = [];
@@ -291,7 +364,7 @@ class WooAC {
   private function add_lead( $full_name, $order_id ) {
     $this->maybe_api_init();
 
-    $lead_title         = 'Заказ №' . $order_id . ' от ' . $full_name;
+    $lead_title         = 'Тест Заказ №' . $order_id . ' от ' . $full_name;
     $new_lead_status_id = $this->api->getLeadStatusID( $this->leads_statuses_titles['new'] );
 
     $request['add'][] = array(

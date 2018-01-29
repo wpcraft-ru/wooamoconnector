@@ -130,8 +130,8 @@ class WooAmoConnector_Settings {
 
     <?php
     printf('<p><a href="%s">Управление синхронизацией</a></p>', admin_url('tools.php?page=wooamoconnector-tools'));
-    printf('<p><a href="%s" target="_blank">Расширенная версия с дополнительными возможностями</a></p>', "https://wpcraft.ru/product/wooms-extra/");
-    printf('<p><a href="%s" target="_blank">Помощь и техическая поддержка</a></p>', "https://wpcraft.ru");
+    printf('<p><a href="%s" target="_blank">Расширенная версия с дополнительными возможностями</a></p>', "https://wpcraft.ru/product/wooac-expert/");
+    printf('<p><a href="%s" target="_blank">Помощь и техническая поддержка</a></p>', "https://wpcraft.ru/contacts/");
   }
 }
 new WooAmoConnector_Settings;
