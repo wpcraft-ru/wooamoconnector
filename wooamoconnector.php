@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: WooAmoConnector
-Version: 0.7.3
 Plugin URI: https://github.com/uptimizt/wooamoconnector
 Description: AmoCRM & WooCommerce - интеграция. Создание сделок и контактов с сайта в CRM
 Author: WPCraft
 Author URI: http://wpcraft.ru/?utm_source=wpplugin&utm_medium=plugin-link&utm_campaign=WooAmoConnector
+Version: 1.0.0
 */
 
 require_once 'inc/class-settings-api.php';
