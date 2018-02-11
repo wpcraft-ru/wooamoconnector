@@ -3,23 +3,23 @@
 * Main class worker for sync data AmoCRM & WooCommerce
 */
 
-class WooAC {
+class WooAC
+{
 
-  function __construct() {
+  function __construct()
+  {
     add_action( 'woocommerce_add_to_cart', array( $this, 'hook_on_add_product' ), 10, 6 );
 
     add_filter( 'cron_schedules', array($this, 'add_schedule') );
-    add_action('init', [$this, 'init_cron']);
+    add_action( 'init', [$this, 'init_cron']);
 
     add_action( 'wooamoconnector_cron_worker', [$this, 'walker']);
 
     add_action( 'woocommerce_order_status_changed', array( $this, 'hook_on_order_status_change' ), 10, 3 );
 
-    add_action('admin_menu', [$this, 'add_admin_menu']);
-    add_action('wac_sync', [$this, 'send_walker_manual_start']);
-
+    add_action( 'admin_menu', [$this, 'add_admin_menu']);
+    add_action( 'wac_sync', [$this, 'send_walker_manual_start']);
   }
-
 
   //Main walker
   function walker(){
@@ -33,7 +33,8 @@ class WooAC {
       'meta_compare' => 'NOT EXISTS',
     );
 
-    if(empty(get_option('wooac_orders_send_from'))){
+    $date_from = get_option('wooac_orders_send_from');
+    if(empty($date_from)){
       $date_from = '2 day ago';
     } else {
       $date_from = get_option('wooms_orders_send_from');
@@ -56,7 +57,6 @@ class WooAC {
     }
 
     return $result_list;
-
   }
 
   /**
@@ -94,10 +94,10 @@ class WooAC {
     if(empty($response["_embedded"]["items"][0]["id"])){
       return false;
     } else {
-      $id = $response["_embedded"]["items"][0]["id"];
-      update_post_meta($order_id, 'wac_id', $id);
+      $lead_id = $response["_embedded"]["items"][0]["id"];
+      update_post_meta($order_id, 'wac_id', $lead_id);
 
-      do_action('wooac_added_lead', $id, $order_id);
+      do_action('wooac_added_lead', $lead_id, $order_id);
 
       return true;
     }
@@ -160,6 +160,7 @@ class WooAC {
           echo '<hr>';
           do_action('wac_sync');
         }
+        do_action('wooac_test');
       ?>
     </div>
     <?php

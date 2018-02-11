@@ -18,15 +18,6 @@ class WooAmoConnector_Settings {
   }
 
 
-  function display_field_wooms_use_uuid(){
-    $option_name = 'wooms_use_uuid';
-    printf('<input type="checkbox" name="%s" value="1" %s />', $option_name, checked( 1, get_option($option_name), false ));
-    ?>
-
-    <p><small>Если товары не попадают из МойСклад на сайт - попробуйте включить эту опцию.</small></p>
-    <p><small>По умолчанию используется связь продуктов по артикулу. Это позволяет обеспечить синхронизацию без удаления всех продуктов с сайта при их наличии. Но без артикула товары не будут синхронизироваться. Если товаров на сайте нет, либо их можно удалить без вреда, то можно включить синхронизацию по UUID. В этом случае артикулы будут не нужны. <br/>При создании записи о продукте произойдет связка по UUID (meta_key = wooms_id)</small></p>
-    <?php
-  }
 
   function settings_init(){
     add_settings_section(
@@ -95,8 +86,8 @@ class WooAmoConnector_Settings {
   }
 
   function display_wac_sync_disable(){
-    $name ='wac_sync_disable';
-    printf('<input type="checkbox" name="%s" value="1"/>', $name, checked(1, get_option($name)));
+    $name = 'wac_sync_disable';
+    printf('<input type="checkbox" name="%s" %s value="1"/>', $name, checked(1, get_option($name), false));
   }
   function display_wac_key(){
     $name ='wac_key';

@@ -53,10 +53,6 @@ class WooAC_API_Wrapper
       curl_setopt($this->curl, CURLOPT_COOKIEJAR, '-');
       curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST,$method);
 
-      // Reset some arguments, in order to avoid use some from previous request
-      // curl_setopt($this->curl, CURLOPT_POST, false);
-      // curl_setopt($this->curl, CURLOPT_HTTPHEADER, false);
-
       if (is_null($headers) === false) {
           curl_setopt($this->curl, CURLOPT_HTTPHEADER, $headers);
       } else {
@@ -69,6 +65,12 @@ class WooAC_API_Wrapper
 
         //Encode parameters if them already not encoded in json
         $parameters = json_encode($parameters);
+        // $parameters = http_build_query($parameters);
+        // $parameters = json_encode($parameters, JSON_PRETTY_PRINT);
+        // $parameters = json_encode($parameters, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT);
+        // $parameters = json_encode($parameters, JSON_FORCE_OBJECT);
+
+        // do_action('logger_u7', ['rest', $url, $parameters, curl_getinfo($this->curl, CURLINFO_COOKIELIST)]);
 
         curl_setopt($this->curl, CURLOPT_POSTFIELDS, $parameters);
       }
