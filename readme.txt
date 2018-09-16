@@ -15,12 +15,21 @@ amoCRM (https://www.amocrm.com/) and WooCommerce - sync, integration, connection
 Integration WooCommerce & AmoCRM https://www.amocrm.com/
 
 
-Features:
+# Features:
 
 *   Sync orders to lead via JSON REST API
 *   Simple settings
 
-Sources https://github.com/uptimizt/wooamoconnector
+# Links
+
+Sources [https://github.com/wpcraft-ru/wooamoconnector](https://github.com/wpcraft-ru/wooamoconnector)
+
+Page [https://wpcraft.ru/product/wooamoconnector/](https://wpcraft.ru/product/wooamoconnector/)
+
+XT version [https://wpcraft.ru/product/wooamoconnector-xt/](https://wpcraft.ru/product/wooamoconnector-xt/)
+
+Issues [https://github.com/wpcraft-ru/wooamoconnector/issues](https://github.com/wpcraft-ru/wooamoconnector/issues)
+
 
 == Installation ==
 
