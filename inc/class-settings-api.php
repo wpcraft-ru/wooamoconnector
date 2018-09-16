@@ -104,6 +104,8 @@ class WooAmoConnector_Settings {
   function display_wac_subdomain(){
     $name ='wac_subdomain';
     printf('<input type="text" name="%s" value="%s"/>', $name, get_option($name));
+    printf('<p>%s</p>', 'Нужно указать поддомен без amocrm.ru');
+
   }
 
   function display_settings(){

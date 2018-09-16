@@ -35,7 +35,13 @@ e.g.
 
 == Changelog ==
 
-= 1.0.0 =
+= 1.1 =
+- code refactoring
+- add instructions to settings page
+- add comment for lead in AmoCRM with the order's data
+- add text domain for localization
+
+= 1.0 =
 * bug fixes
 
 = 0.7.3 =

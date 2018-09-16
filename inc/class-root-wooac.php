@@ -3,26 +3,113 @@
 * Main class worker for sync data AmoCRM & WooCommerce
 */
 
-class WooAC
+class WooAmoConnector_Walker
 {
 
-  function __construct()
+  public static function init()
   {
-    add_action( 'woocommerce_add_to_cart', array( $this, 'hook_on_add_product' ), 10, 6 );
+    add_action( 'woocommerce_add_to_cart', array( __CLASS__, 'hook_on_add_product' ), 10, 6 );
 
-    add_filter( 'cron_schedules', array($this, 'add_schedule') );
-    add_action( 'init', [$this, 'init_cron']);
+    add_filter( 'cron_schedules', array(__CLASS__, 'add_schedule') );
+    add_action( 'init', array(__CLASS__, 'init_cron'));
 
-    add_action( 'wooamoconnector_cron_worker', [$this, 'walker']);
+    add_action( 'wooamoconnector_cron_worker', array(__CLASS__, 'walker'));
 
-    add_action( 'woocommerce_order_status_changed', array( $this, 'hook_on_order_status_change' ), 10, 3 );
+    add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'hook_on_order_status_change' ), 10, 3 );
 
-    add_action( 'admin_menu', [$this, 'add_admin_menu']);
-    add_action( 'wac_sync', [$this, 'send_walker_manual_start']);
+    add_action( 'admin_menu', array(__CLASS__, 'add_admin_menu'));
+    add_action( 'wac_sync', array(__CLASS__, 'send_walker_manual_start'));
+
+    add_action( 'wooac_added_lead', array(__CLASS__, 'add_comment'), 10, 2);
   }
 
+  /**
+   * Add comment to lead
+   */
+  public static function add_comment($lead_id, $order_id){
+
+    $order = wc_get_order($order_id);
+
+    $text = sprintf(
+      'Заказ №%s, ссылка: %s',
+      $order_id,
+      $order->get_edit_order_url()
+    );
+
+    if( $order->get_formatted_billing_full_name() ){
+      $text .= PHP_EOL . 'Клиент: ' . $order->get_formatted_billing_full_name();
+    }
+
+    if($order->get_billing_company()){
+      $text .= PHP_EOL . 'Компания: ' . $order->get_billing_company();
+    }
+
+    if($order->get_billing_phone()){
+      $text .= PHP_EOL . 'Телефон: ' . $order->get_billing_phone();
+    }
+
+    if($order->get_billing_email()){
+      $text .= PHP_EOL . 'email: ' . $order->get_billing_email();
+    }
+
+    if($order->get_formatted_billing_address()){
+      $text .= PHP_EOL . 'Адрес клиента: ' . $order->get_formatted_billing_address();
+    }
+
+    if($order->get_payment_method()){
+      $text .= PHP_EOL . 'Метод оплаты: ' . $order->get_payment_method();
+    }
+
+    if($order->get_customer_note()){
+      $text .= PHP_EOL . '# Примечание клиента:' . PHP_EOL . $order->get_customer_note();
+    }
+
+    if($order->has_shipping_address()){
+      $text .= PHP_EOL . '# Указаны данные доставки...';
+
+      if($order->get_formatted_shipping_address()){
+        $text .= PHP_EOL . 'Адрес доставки: ' . $order->get_formatted_shipping_address();
+      }
+
+      if($order->get_formatted_shipping_full_name()){
+        $text .= PHP_EOL . 'Имя клиента для доставки: ' . $order->get_formatted_shipping_full_name();
+      }
+
+    }
+
+    $args['add'] = array(
+      array(
+        'element_id' => $lead_id,
+        'element_type' => 2,
+        'note_type' => 'COMMON',
+        'text' => $text,
+      )
+    );
+
+    $response = wooac_request('/api/v2/notes', 'POST', $args);
+
+  }
+
+  /**
+   * Get client's name by order_id
+   */
+  public static function get_data_order_name( $order_id ) {
+		$order = wc_get_order( $order_id );
+		$name  = $order->get_billing_company();
+
+		if ( empty( $name ) ) {
+			$name = $order->get_billing_last_name();
+			if ( ! empty( $order->get_billing_first_name() ) ) {
+				$name .= ' ' . $order->get_billing_first_name();
+			}
+		}
+
+		return $name;
+	}
+
+
   //Main walker
-  function walker(){
+  public static function walker(){
 
     set_transient('wac_last_start', date('Y-m-d H:i:s'), DAY_IN_SECONDS);
 
@@ -48,7 +135,7 @@ class WooAC
 
     $result_list = [];
     foreach ($orders as $key => $order) {
-      $check = $this->send_order($order->ID);
+      $check = self::send_order($order->ID);
 
       if($check){
         update_post_meta($order->ID, 'wooamoc_send_timestamp', date("Y-m-d H:i:s"));
@@ -62,8 +149,8 @@ class WooAC
   /**
   * Ручная передача заказов - обертка для обходчика с выводом результатов
   */
-  function send_walker_manual_start(){
-    $data = $this->walker();
+  public static function send_walker_manual_start(){
+    $data = self::walker();
 
     if(is_array($data)){
       foreach ($data as $key => $value) {
@@ -77,8 +164,10 @@ class WooAC
   /*
   * Отправка данных через API AmoCRM
   */
-  function send_order($order_id){
+  public static function send_order($order_id){
     $order = wc_get_order($order_id);
+
+    $args = array();
 
     $args['add'] = array(
       array(
@@ -91,7 +180,12 @@ class WooAC
 
     $response = wooac_request('/api/v2/leads', 'POST', $args);
 
-    if(empty($response["_embedded"]["items"][0]["id"])){
+
+    if(is_wp_error($response)){
+
+      echo '<pre>' . $response->get_error_message() . '</pre>';
+
+    } elseif(empty($response["_embedded"]["items"][0]["id"])){
       return false;
     } else {
       $lead_id = $response["_embedded"]["items"][0]["id"];
@@ -103,7 +197,7 @@ class WooAC
     }
   }
 
-  function get_full_name($order_id){
+  public static function get_full_name($order_id){
     $order = wc_get_order($order_id);
 
     $full_name = '';
@@ -130,18 +224,18 @@ class WooAC
     return $full_name;
   }
 
-  function add_admin_menu(){
+  public static function add_admin_menu(){
     add_submenu_page(
       'tools.php',
       'AmoCRM - инструменты',
       'AmoCRM',
       'manage_options',
       'wooamoconnector-tools',
-      [$this, 'display_tools']
+      array(__CLASS__, 'display_tools')
     );
   }
 
-  function display_tools(){
+  public static function display_tools(){
     $url1 = admin_url('tools.php?page=wooamoconnector-tools');
     $url2 = add_query_arg('a', 'wac-sync', $url1);
     ?>
@@ -167,22 +261,22 @@ class WooAC
   }
 
 
-  function add_schedule( $schedules ) {
+  public static function add_schedule( $schedules ) {
     $time = get_option('wac_sync_time', 60);
     $schedules['wooamoconnector_cron'] = array( 'interval' => $time, 'display' => 'WooAmoConnector Cron Worker' );
     return $schedules;
   }
 
-  function init_cron(){
+  public static function init_cron(){
     if ( ! wp_next_scheduled( 'wooamoconnector_cron_worker' ) ) {
       wp_schedule_event( time(), 'wooamoconnector_cron', 'wooamoconnector_cron_worker' );
     }
   }
 
-  function hook_on_order_status_change( $order_id, $old_status, $new_status ) {
+  public static function hook_on_order_status_change( $order_id, $old_status, $new_status ) {
     //@TODO: Update status
   }
 
 }
 
-new WooAC;
+WooAmoConnector_Walker::init();
