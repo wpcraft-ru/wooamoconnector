@@ -6,7 +6,7 @@ Description: AmoCRM & WooCommerce - интеграция. Создание сд�
 Author: WPCraft
 Author URI: http://wpcraft.ru/?utm_source=wpplugin&utm_medium=plugin-link&utm_campaign=WooAmoConnector
 Text Domain: wooac
-Version: 1.1
+Version: 1.2
 */
 
 require_once 'inc/class-settings-api.php';

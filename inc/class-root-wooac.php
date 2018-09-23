@@ -116,7 +116,7 @@ class WooAmoConnector_Walker
     $args = array(
       'post_type' => 'shop_order',
       'post_status' => 'any',
-      'meta_key' => 'wooamoc_send_timestamp',
+      'meta_key' => 'wac_id',
       'meta_compare' => 'NOT EXISTS',
     );
 

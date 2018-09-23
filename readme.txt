@@ -44,6 +44,9 @@ e.g.
 
 == Changelog ==
 
+= 1.2 =
+- chg meta field for check orders 
+
 = 1.1 =
 - code refactoring
 - add instructions to settings page
