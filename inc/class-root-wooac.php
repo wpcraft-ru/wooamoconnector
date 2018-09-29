@@ -30,10 +30,16 @@ class WooAmoConnector_Walker
 
     $order = wc_get_order($order_id);
 
+    if(method_exists('WC_Order', 'get_edit_order_url')){
+      $order_url = $order->get_edit_order_url();
+    } else {
+      $order_url = get_edit_post_link($order_id, '');
+    }
+
     $text = sprintf(
       'Заказ №%s, ссылка: %s',
       $order_id,
-      $order->get_edit_order_url()
+      $order_url
     );
 
     if( $order->get_formatted_billing_full_name() ){

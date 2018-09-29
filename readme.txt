@@ -44,8 +44,11 @@ e.g.
 
 == Changelog ==
 
+= 1.3 =
+- fix fatal error for oldest version WooCommerce 
+
 = 1.2 =
-- chg meta field for check orders 
+- chg meta field for check orders
 
 = 1.1 =
 - code refactoring
