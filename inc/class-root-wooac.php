@@ -8,8 +8,6 @@ class WooAmoConnector_Walker
 
   public static function init()
   {
-    add_action( 'woocommerce_add_to_cart', array( __CLASS__, 'hook_on_add_product' ), 10, 6 );
-
     add_filter( 'cron_schedules', array(__CLASS__, 'add_schedule') );
     add_action( 'init', array(__CLASS__, 'init_cron'));
 

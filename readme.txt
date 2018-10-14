@@ -44,6 +44,9 @@ e.g.
 
 == Changelog ==
 
+= 1.5 =
+- fix error with added product to cart
+
 = 1.4 =
 - add order items to note
 
