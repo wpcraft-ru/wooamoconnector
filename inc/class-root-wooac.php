@@ -21,6 +21,42 @@ class WooAmoConnector_Walker
     add_action( 'wac_sync', array(__CLASS__, 'send_walker_manual_start'));
 
     add_action( 'wooac_added_lead', array(__CLASS__, 'add_comment'), 10, 2);
+
+    add_filter('wooac_notes_add', array(__CLASS__, 'add_products'), 10, 2);
+  }
+
+  /**
+  * Добавляем позиции заказа в комментарий к лиду
+  */
+  public static function add_products($args, $order_id){
+
+    $order = wc_get_order($order_id);
+
+    $note_products_title = PHP_EOL . '#' . PHP_EOL . '# Продукты' . PHP_EOL;
+    $note_products = '';
+
+    foreach( $order->get_items() as $item_id => $item_product ){
+
+        $text_row = sprintf('- %s, кол-во: %s, сумма: %s',
+                      $item_product->get_name(),
+                      $item_product->get_quantity(),
+                      $item_product->get_total()
+                    );
+
+        $note_products .= PHP_EOL . $text_row;
+
+        //Get the WC_Product object
+        $product = $item_product->get_product();
+
+        //Get the product SKU (using WC_Product method)
+        if($sku = $product->get_sku()){
+          $note_products .= sprintf(' (арт. %s)', $sku);
+        }
+    }
+
+    $args['add'][0]['text'] .= $note_products_title . $note_products;
+
+    return $args;
   }
 
   /**
@@ -67,7 +103,7 @@ class WooAmoConnector_Walker
     }
 
     if($order->get_customer_note()){
-      $text .= PHP_EOL . '# Примечание клиента:' . PHP_EOL . $order->get_customer_note();
+      $text .= PHP_EOL . '#' . PHP_EOL . '# Примечание клиента:' . PHP_EOL . $order->get_customer_note();
     }
 
     if($order->has_shipping_address()){
@@ -91,6 +127,8 @@ class WooAmoConnector_Walker
         'text' => $text,
       )
     );
+
+    $args = apply_filters('wooac_notes_add', $args, $order_id);
 
     $response = wooac_request('/api/v2/notes', 'POST', $args);
 

@@ -44,8 +44,11 @@ e.g.
 
 == Changelog ==
 
+= 1.4 =
+- add order items to note
+
 = 1.3 =
-- fix fatal error for oldest version WooCommerce 
+- fix fatal error for oldest version WooCommerce
 
 = 1.2 =
 - chg meta field for check orders
