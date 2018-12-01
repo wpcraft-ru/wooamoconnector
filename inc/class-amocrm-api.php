@@ -91,7 +91,11 @@ class WooAC_API_Wrapper
       $result = json_decode($response, true);
 
       if ($statusCode >= 400) {
+        if(empty($result['message']){
+          throw new Exception(print_r($result, true), $statusCode);
+        } else {
           throw new Exception($result['message'], $statusCode);
+        }
       }
 
       return $result;
